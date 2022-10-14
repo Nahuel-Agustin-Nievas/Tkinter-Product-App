@@ -1,5 +1,6 @@
-from tkinter import ttk
 from tkinter import *
+from tkinter import ttk
+
 
 import sqlite3
 
@@ -31,7 +32,13 @@ class Product:
 
 
         #button add product
-        ttk.Button(frame, text="Save Product").grid(row = 3, columnspan = 2, sticky= W + E)
+        ttk.Button(frame, text="Save Product", command= self.add_products).grid(row = 3, columnspan = 2, sticky= W + E)
+
+
+        #output message
+        self.message = Label(text="", fg= "red")
+        self.message.grid(row = 3, column = 0, columnspan = 2, sticky= W + E)
+
 
         #create table
         self.tree = ttk.Treeview(height=10, column= 2)
@@ -40,6 +47,11 @@ class Product:
         self.tree.heading("#1", text="Price", anchor=CENTER)
 
 
+       # buttons
+        ttk.Button(text="DELETE", command=self.delete_product).grid(row=5, column=0, sticky= W + E)
+        ttk.Button(text="EDIT").grid(row=5, column= 1, sticky= W + E)
+
+       #filling the rows
         self.get_products()
 
     def run_query(self, query, parameters =()):
@@ -61,6 +73,38 @@ class Product:
         for row in db_rows:
             self.tree.insert("", 0, text=row[1], values= row[2])
 
+
+    def validations(self):
+        return len(self.name.get()) != 0 and len(self.price.get()) != 0 
+
+
+    def add_products(self):
+        if self.validations():
+            query= "INSERT INTO product VALUES(NULL, ?,?)"
+            parameters = (self.name.get(), self.price.get())
+            self.run_query(query, parameters)
+            self.message["text"] = "Product {} added successfully".format(self.name.get())
+            self.name.delete(0, END)
+            self.price.delete(0, END)
+        else:
+            self.message["text"] = "Name and Price are required"
+        self.get_products()
+
+
+    def delete_product(self):
+       self.message["text"] = ""
+       try:
+         self.tree.item(self.tree.selection())["text"][0]
+       except IndexError as e:
+            self.message["text"] = "Please select a product"
+            return
+       self.message["text"] = ""     
+       name = self.tree.item(self.tree.selection())["text"]
+       query= "DELETE FROM product WHERE name=?"
+       self.run_query(query,(name,))
+       self.message["text"] = "Product {} deleted successfully".format(name)
+       self.get_products()
+ 
 if __name__ == '__main__':
     window = Tk()
     application = Product(window)
